@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крестики-Нолики vs Умный Компьютер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 15px rgba(0, 219, 222, 0.3);
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: #89c9ff;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        
+        .game-info {
+            background: rgba(255, 255, 255, 0.07);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .status {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            min-height: 40px;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .player-turn {
+            background: rgba(0, 100, 255, 0.2);
+            color: #4dccff;
+            border-left: 4px solid #4dccff;
+        }
+        
+        .computer-turn {
+            background: rgba(255, 65, 108, 0.2);
+            color: #ff8ba0;
+            border-left: 4px solid #ff416c;
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .score {
+            font-size: 1.4em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .score-label {
+            font-size: 0.9em;
+            color: #a9b7c6;
+            margin-bottom: 8px;
+        }
+        
+        .score-value {
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 2em;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 15px;
+            margin: 30px auto;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        
+        .cell:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .cell:hover:not(.occupied) {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px) scale(1.05);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cell.x {
+            color: #00dbde;
+            text-shadow: 0 0 25px rgba(0, 219, 222, 0.7);
+        }
+        
+        .cell.o {
+            color: #fc00ff;
+            text-shadow: 0 0 25px rgba(252, 0, 255, 0.7);
+        }
+        
+        .cell.occupied {
+            cursor: not-allowed;
+        }
+        
+        .cell.win {
+            animation: winGlow 1.5s infinite alternate;
+            background: rgba(255, 215, 0, 0.15);
+            border-color: #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+        }
+        
+        @keyframes winGlow {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+            100% { transform: scale(1.03); box-shadow: 0 0 40px rgba(255, 215, 0, 0.7); }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #00dbde, #0093e9);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 1.2em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            min-width: 180px;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+        }
+        
+        button:hover::after {
+            transform: translateX(100%);
+            transition: transform 0.6s;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 219, 222, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(-1px);
+        }
+        
+        button.secondary {
+            background: linear-gradient(45deg, #fc00ff, #8a00ff);
+        }
+        
+        button.secondary:hover {
+            box-shadow: 0 10px 30px rgba(252, 0, 255, 0.4);
+        }
+        
+        button.danger {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        }
+        
+        button.danger:hover {
+            box-shadow: 0 10px 30px rgba(255, 65, 108, 0.4);
+        }
+        
+        .difficulty {
+            margin: 25px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .diff-btn {
+            padding: 12px 25px;
+            min-width: 140px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            border: 2px solid transparent;
+        }
+        
+        .diff-btn.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .ai-thinking {
+            font-style: italic;
+            color: #89c9ff;
+            margin-top: 15px;
+            min-height: 24px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .ai-thinking.visible {
+            opacity: 1;
+        }
+        
+        .strategy-hint {
+            background: rgba(255, 215, 0, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ffd700;
+            text-align: left;
+            font-size: 0.95em;
+            color: #ffd700;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .cell {
+                font-size: 3.8em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 350px;
+            }
+            
+            .score-board {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+        
+        /* Анимация хода компьютера */
+        @keyframes computerMove {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .cell.computer-move {
+            animation: computerMove 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .cell.player-move {
+            animation: playerMove 0.4s ease-out;
+        }
+        
+        @keyframes playerMove {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .analysis-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #89c9ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Крестики-Нолики vs Умный ИИ</h1>
+        <p class="subtitle">Компьютер анализирует ваши стратегии и блокирует комбинации</p>
+        
+        <div class="game-info">
+            <div class="status player-turn" id="status">Ваш ход! Вы играете за X</div>
+            
+            <div class="score-board">
+                <div class="score">
+                    <div class="score-label">Вы</div>
+                    <div class="score-value" id="playerScore">0</div>
+                </div>
+                <div class="score">
+                    <div class="score-label">Ничьи</div>
+                    <div class="score-value" id="drawScore">0</div>
+                </div>
+                <div class="score">
+                    <div class="score-label">Компьютер</div>
+                    <div class="score-value" id="computerScore">0</div>
+                </div>
+            </div>
+            
+            <div class="ai-thinking" id="aiThinking"></div>
+            
+            <div class="difficulty">
+                <button class="diff-btn active" data-level="easy">🎮 Легко</button>
+                <button class="diff-btn" data-level="medium">⚡ Нормально</button>
+                <button class="diff-btn" data-level="hard">🧠 Умный</button>
+                <button class="diff-btn" data-level="expert">🤖 Эксперт</button>
+            </div>
+        </div>
+        
+        <div class="strategy-hint" id="strategyHint">
+            <strong>Стратегия ИИ:</strong> Компьютер анализирует ваши ходы и блокирует опасные комбинации
+        </div>
+        
+        <div class="game-board" id="board">
+            <!-- Ячейки создаются через JavaScript -->
+        </div>
+        
+        <div class="controls">
+            <button id="newGame">🔄 Новая игра</button>
+            <button id="switchSides" class="secondary">🔄 Поменять сторону</button>
+            <button id="resetScore" class="danger">🗑️ Сбросить счёт</button>
+        </div>
+        
+        <div class="analysis-info">
+            <div>Ход: <span id="moveCount">1</span></div>
+            <div>Уровень: <span id="currentLevel">Умный</span></div>
+            <div>ИИ анализирует: <span id="threatsBlocked">0</span> угроз</div>
+        </div>
+    </div>
+
+    <script>
+        // Улучшенный ИИ для крестиков-ноликов
+        class AdvancedAI {
+            constructor(difficulty) {
+                this.difficulty = difficulty;
+                this.threatsBlocked = 0;
+                this.moveHistory = [];
+                this.playerPatterns = [];
+            }
+            
+            // Основной метод для получения хода
+            getMove(board, playerSymbol, computerSymbol) {
+                const emptyCells = this.getEmptyCells(board);
+                if (emptyCells.length === 0) return -1;
+                
+                // Анализируем ходы игрока
+                this.analyzePlayerPatterns(board, playerSymbol);
+                
+                let move;
+                
+                switch(this.difficulty) {
+                    case 'easy':
+                        move = this.getEasyMove(emptyCells);
+                        break;
+                        
+                    case 'medium':
+                        move = this.getMediumMove(board, playerSymbol, computerSymbol);
+                        break;
+                        
+                    case 'hard':
+                        move = this.getHardMove(board, playerSymbol, computerSymbol);
+                        break;
+                        
+                    case 'expert':
+                        move = this.getExpertMove(board, playerSymbol, computerSymbol);
+                        break;
+                        
+                    default:
+                        move = this.getMediumMove(board, playerSymbol, computerSymbol);
+                }
+                
+                // Сохраняем историю ходов
+                this.moveHistory.push({
+                    move,
+                    board: [...board],
+                    difficulty: this.difficulty
+                });
+                
+                return move;
+            }
+            
+            // Получение пустых клеток
+            getEmptyCells(board) {
+                return board
+                    .map((cell, index) => cell === '' ? index : -1)
+                    .filter(index => index !== -1);
+            }
+            
+            // Легкий уровень - случайные ходы
+            getEasyMove(emptyCells) {
+                return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+            
+            // Средний уровень - базовая логика
+            getMediumMove(board, playerSymbol, computerSymbol) {
+                // 1. Побеждаем, если можем
+                let move = this.findWinningMove(board, computerSymbol);
+                if (move !== -1) return move;
+                
+                // 2. Блокируем игрока (50% шанс)
+                if (Math.random() > 0.5) {
+                    move = this.findWinningMove(board, playerSymbol);
+                    if (move !== -1) {
+                        this.threatsBlocked++;
+                        return move;
+                    }
+                }
+                
+                // 3. Занимаем стратегические позиции
+                return this.getStrategicMove(board);
+            }
+            
+            // Сложный уровень - продвинутая логика
+            getHardMove(board, playerSymbol, computerSymbol) {
+                // 1. Побеждаем, если можем
+                let move = this.findWinningMove(board, computerSymbol);
+                if (move !== -1) return move;
+                
+                // 2. Блокируем все угрозы игрока
+                move = this.findWinningMove(board, playerSymbol);
+                if (move !== -1) {
+                    this.threatsBlocked++;
+                    return move;
+                }
+                
+                // 3. Создаем вилки (две угрозы одновременно)
+                move = this.createFork(board, computerSymbol, playerSymbol);
+                if (move !== -1) return move;
+                
+                // 4. Блокируем вилки игрока
+                move = this.blockPlayerFork(board, playerSymbol, computerSymbol);
+                if (move !== -1) {
+                    this.threatsBlocked++;
+                    return move;
+                }
+                
+                // 5. Стратегические ходы
+                return this.getStrategicMove(board);
+            }
+            
+            // Экспертный уровень - мини-макс алгоритм
+            getExpertMove(board, playerSymbol, computerSymbol) {
+                // Используем мини-макс для лучшего хода
+                const depth = 0;
+                const isMaximizing = true;
+                const bestMove = this.minimax(
+                    board, depth, isMaximizing, playerSymbol, computerSymbol, -Infinity, Infinity
+                );
+                
+                return bestMove.index !== undefined ? bestMove.index : this.getHardMove(board, playerSymbol, computerSymbol);
+            }
+            
+            // Мини-макс алгоритм с альфа-бета отсечением
+            minimax(board, depth, isMaximizing, playerSymbol, computerSymbol, alpha, beta) {
+                // Проверяем конечные состояния
+                if (this.checkWinner(board, computerSymbol)) {
+                    return { score: 10 - depth };
+                }
+                
+                if (this.checkWinner(board, playerSymbol)) {
+                    return { score: depth - 10 };
+                }
+                
+                if (this.isBoardFull(board)) {
+                    return { score: 0 };
+                }
+                
+                if (isMaximizing) {
+                    let bestScore = -Infinity;
+                    let bestMove = {};
+                    
+                    for (let i = 0; i < board.length; i++) {
+                        if (board[i] === '') {
+                            board[i] = computerSymbol;
+                            const result = this.minimax(board, depth + 1, false, playerSymbol, computerSymbol, alpha, beta);
+                            board[i] = '';
+                            
+                            if (result.score > bestScore) {
+                                bestScore = result.score;
+                                bestMove = { index: i, score: bestScore };
+                            }
+                            
+                            alpha = Math.max(alpha, bestScore);
+                            if (beta <= alpha) break;
+                        }
+                    }
+                    
+                    return bestMove;
+                } else {
+                    let bestScore = Infinity;
+                    let bestMove = {};
+                    
+                    for (let i = 0; i < board.length; i++) {
+                        if (board[i] === '') {
+                            board[i] = playerSymbol;
+                            const result = this.minimax(board, depth + 1, true, playerSymbol, computerSymbol, alpha, beta);
+                            board[i] = '';
+                            
+                            if (result.score < bestScore) {
+                                bestScore = result.score;
+                                bestMove = { index: i, score: bestScore };
+                            }
+                            
+                            beta = Math.min(beta, bestScore);
+                            if (beta <= alpha) break;
+                        }
+                    }
+                    
+                    return bestMove;
+                }
+            }
+            
+            // Поиск выигрышного хода
+            findWinningMove(board, symbol) {
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === '') {
+                        board[i] = symbol;
+                        if (this.checkWinner(board, symbol)) {
+                            board[i] = '';
+                            return i;
+                        }
+                        board[i] = '';
+                    }
+                }
+                return -1;
+            }
+            
+            // Создание вилки (двух угроз одновременно)
+            createFork(board, computerSymbol, playerSymbol) {
+                const emptyCells = this.getEmptyCells(board);
+                
+                for (let cell of emptyCells) {
+                    // Проверяем, создает ли этот ход более одной угрозы
+                    let threats = 0;
+                    board[cell] = computerSymbol;
+                    
+                    // Проверяем все возможные линии
+                    const winPatterns = this.getWinPatterns();
+                    for (let pattern of winPatterns) {
+                        if (pattern.includes(cell)) {
+                            const line = pattern.map(i => board[i]);
+                            const computerCount = line.filter(s => s === computerSymbol).length;
+                            const emptyCount = line.filter(s => s === '').length;
+                            
+                            if (computerCount === 2 && emptyCount === 1) {
+                                threats++;
+                            }
+                        }
+                    }
+                    
+                    board[cell] = '';
+                    
+                    if (threats >= 2) {
+                        return cell;
+                    }
+                }
+                
+                return -1;
+            }
+            
+            // Блокировка вилки игрока
+            blockPlayerFork(board, playerSymbol, computerSymbol) {
+                const emptyCells = this.getEmptyCells(board);
+                
+                // Ищем клетки, где игрок может создать вилку
+                const forkCells = [];
+                
+                for (let cell of emptyCells) {
+                    board[cell] = playerSymbol;
+                    
+                    // Проверяем, сколько угроз создает этот ход
+                    let threats = 0;
+                    const winPatterns = this.getWinPatterns();
+                    
+                    for (let pattern of winPatterns) {
+                        if (pattern.includes(cell)) {
+                            const line = pattern.map(i => board[i]);
+                            const playerCount = line.filter(s => s === playerSymbol).length;
+                            const emptyCount = line.filter(s => s === '').length;
+                            
+                            if (playerCount === 2 && emptyCount === 1) {
+                                threats++;
+                            }
+                        }
+                    }
+                    
+                    board[cell] = '';
+                    
+                    if (threats >= 2) {
+                        forkCells.push(cell);
+                    }
+                }
+                
+                // Если найдены вилки, пытаемся блокировать
+                if (forkCells.length > 0) {
+                    // Пробуем поставить символ в центр вилки
+                    if (forkCells.includes(4) && board[4] === '') {
+                        return 4;
+                    }
+                    
+                    // Или создаем свою угрозу
+                    for (let cell of emptyCells) {
+                        board[cell] = computerSymbol;
+                        const winMove = this.findWinningMove(board, computerSymbol);
+                        board[cell] = '';
+                        
+                        if (winMove !== -1) {
+                            return cell;
+                        }
+                    }
+                    
+                    // Иначе блокируем первую найденную вилку
+                    return forkCells[0];
+                }
+                
+                return -1;
+            }
+            
+            // Стратегические ходы
+            getStrategicMove(board) {
+                // Приоритеты клеток
+                const priorities = [
+                    4, // центр - самый важный
+                    0, 2, 6, 8, // углы
+                    1, 3, 5, 7  // стороны
+                ];
+                
+                // Ищем свободную клетку по приоритету
+                for (let cell of priorities) {
+                    if (board[cell] === '') {
+                        return cell;
+                    }
+                }
+                
+                // Если все стратегические заняты, берем первую свободную
+                return this.getEmptyCells(board)[0];
+            }
+            
+            // Анализ паттернов игрока
+            analyzePlayerPatterns(board, playerSymbol) {
+                // Здесь можно добавить анализ стратегии игрока
+                // и адаптироваться к его стилю игры
+            }
+            
+            // Проверка победителя
+            checkWinner(board, symbol) {
+                const winPatterns = this.getWinPatterns();
+                return winPatterns.some(pattern => 
+                    pattern.every(index => board[index] === symbol)
+                );
+            }
+            
+            // Проверка заполненности доски
+            isBoardFull(board) {
+                return board.every(cell => cell !== '');
+            }
+            
+            // Выигрышные комбинации
+            getWinPatterns() {
+                return [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+            }
+            
+            // Получение информации об ИИ
+            getAIInfo() {
+                return {
+                    threatsBlocked: this.threatsBlocked,
+                    moveHistory: this.moveHistory.length,
+                    difficulty: this.difficulty
+                };
+            }
+            
+            // Сброс статистики
+            resetStats() {
+                this.threatsBlocked = 0;
+                this.moveHistory = [];
+                this.playerPatterns = [];
+            }
+        }
+
+        // Основная игра
+        const gameConfig = {
+            boardSize: 3,
+            playerSymbol: 'X',
+            computerSymbol: 'O',
+            currentPlayer: 'player',
+            gameActive: true,
+            difficulty: 'hard',
+            scores: {
+                player: 0,
+                computer: 0,
+                draw: 0
+            },
+            moveCount: 1
+        };
+        
+        let board = Array(9).fill('');
+        let ai = new AdvancedAI(gameConfig.difficulty);
+        
+        // DOM элементы
+        const statusElement = document.getElementById('status');
+        const boardElement = document.getElementById('board');
+        const playerScoreElement = document.getElementById('playerScore');
+        const computerScoreElement = document.getElementById('computerScore');
+        const drawScoreElement = document.getElementById('drawScore');
+        const aiThinkingElement = document.getElementById('aiThinking');
+        const strategyHintElement = document.getElementById('strategyHint');
+        const moveCountElement = document.getElementById('moveCount');
+        const currentLevelElement = document.getElementById('currentLevel');
+        const threatsBlockedElement = document.getElementById('threatsBlocked');
+        
+        // Инициализация игры
+        function initGame() {
+            board = Array(9).fill('');
+            gameConfig.gameActive = true;
+            gameConfig.currentPlayer = 'player';
+            gameConfig.moveCount = 1;
+            
+            ai = new AdvancedAI(gameConfig.difficulty);
+            
+            // Очищаем доску
+            boardElement.innerHTML = '';
+            
+            // Создаем ячейки
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => makeMove(i));
+                boardElement.appendChild(cell);
+            }
+            
+            updateStatus();
+            updateScores();
+            updateUI();
+        }
+        
+        // Обновление статуса
+        function updateStatus() {
+            if (!gameConfig.gameActive) return;
+            
+            statusElement.className = 'status ' + 
+                (gameConfig.currentPlayer === 'player' ? 'player-turn' : 'computer-turn');
+            
+            if (gameConfig.currentPlayer === 'player') {
+                statusElement.textContent = `Ваш ход! Вы играете за ${gameConfig.playerSymbol}`;
+                aiThinkingElement.classList.remove('visible');
+            } else {
+                statusElement.textContent = 'Компьютер думает...';
+                aiThinkingElement.textContent = getAIThinkingText();
+                aiThinkingElement.classList.add('visible');
+                
+                setTimeout(makeComputerMove, 800 + Math.random() * 700);
+            }
+        }
+        
+        // Текст "думания" ИИ
+        function getAIThinkingText() {
+            const texts = [
+                'Анализирую ваши ходы...',
+                'Ищу оптимальную стратегию...',
+                'Блокирую опасные комбинации...',
+                'Просчитываю варианты...',
+                'Определяю лучший ход...'
+            ];
+            return texts[Math.floor(Math.random() * texts.length)];
+        }
+        
+        // Ход игрока
+        function makeMove(index) {
+            if (!gameConfig.gameActive || gameConfig.currentPlayer !== 'player') return;
+            if (board[index] !== '') return;
+            
+            // Ставим символ
+            board[index] = gameConfig.playerSymbol;
+            const cell = boardElement.children[index];
+            cell.textContent = gameConfig.playerSymbol;
+            cell.classList.add('x', 'player-move', 'occupied');
+            
+            // Проверяем результат
+            checkGameResult();
+            
+            // Увеличиваем счетчик ходов
+            gameConfig.moveCount++;
+            moveCountElement.textContent = gameConfig.moveCount;
+            
+            // Передаем ход компьютеру
+            if (gameConfig.gameActive) {
+                gameConfig.currentPlayer = 'computer';
+                updateStatus();
+            }
+        }
+        
+        // Ход компьютера
+        function makeComputerMove() {
+            if (!gameConfig.gameActive || gameConfig.currentPlayer !== 'computer') return;
+            
+            const moveIndex = ai.getMove(board, gameConfig.playerSymbol, gameConfig.computerSymbol);
+            
+            if (moveIndex !== -1 && board[moveIndex] === '') {
+                board[moveIndex] = gameConfig.computerSymbol;
+                const cell = boardElement.children[moveIndex];
+                cell.textContent = gameConfig.computerSymbol;
+                cell.classList.add('o', 'computer-move', 'occupied');
+                
+                // Обновляем статистику
+                const aiInfo = ai.getAIInfo();
+                threatsBlockedElement.textContent = aiInfo.threatsBlocked;
+                
+                // Проверяем результат
+                checkGameResult();
+                
+                // Увеличиваем счетчик ходов
+                gameConfig.moveCount++;
+                moveCountElement.textContent = gameConfig.moveCount;
+                
+                // Передаем ход игроку
+                if (gameConfig.gameActive) {
+                    gameConfig.currentPlayer = 'player';
+                    updateStatus();
+                }
+            }
+            
+            aiThinkingElement.classList.remove('visible');
+        }
+        
+        // Проверка результата игры
+        function checkGameResult() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            
+            // Проверяем победу игрока
+            if (winPatterns.some(pattern => pattern.every(i => board[i] === gameConfig.playerSymbol))) {
+                endGame('player');
+                return;
+            }
+            
+            // Проверяем победу компьютера
+            if (winPatterns.some(pattern => pattern.every(i => board[i] === gameConfig.computerSymbol))) {
+                endGame('computer');
+                return;
+            }
+            
+            // Проверяем ничью
+            if (board.every(cell => cell !== '')) {
+                endGame('draw');
+                return;
+            }
+        }
+        
+        // Завершение игры
+        function endGame(result) {
+            gameConfig.gameActive = false;
+            
+            // Подсвечиваем выигрышную комбинацию
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            
+            if (result !== 'draw') {
+                const winnerSymbol = result === 'player' ? gameConfig.playerSymbol : gameConfig.computerSymbol;
+                const winPattern = winPatterns.find(pattern => 
+                    pattern.every(index => board[index] === winnerSymbol)
+                );
+                
+                if (winPattern) {
+                    winPattern.forEach(index => {
+                        boardElement.children[index].classList.add('win');
+                    });
+                }
+            }
+            
+            // Обновляем счет
+            switch (result) {
+                case 'player':
+                    gameConfig.scores.player++;
+                    statusElement.textContent = '🎉 Вы победили умный ИИ!';
+                    statusElement.className = 'status player-turn';
+                    break;
+                    
+                case 'computer':
+                    gameConfig.scores.computer++;
+                    statusElement.textContent = '🤖 ИИ обыграл вас!';
+                    statusElement.className = 'status computer-turn';
+                    break;
+                    
+                case 'draw':
+                    gameConfig.scores.draw++;
+                    statusElement.textContent = '🤝 Ничья! Отличная игра!';
+                    statusElement.className = 'status';
+                    break;
+            }
+            
+            updateScores();
+            aiThinkingElement.classList.remove('visible');
+        }
+        
+        // Обновление счета
+        function updateScores() {
+            playerScoreElement.textContent = gameConfig.scores.player;
+            computerScoreElement.textContent = gameConfig.scores.computer;
+            drawScoreElement.textContent = gameConfig.scores.draw;
+        }
+        
+        // Обновление UI
+        function updateUI() {
+            currentLevelElement.textContent = getDifficultyName(gameConfig.difficulty);
+            
+            // Обновляем подсказку стратегии
+            const hints = {
+                easy: 'ИИ делает случайные ходы',
+                medium: 'ИИ блокирует очевидные угрозы',
+                hard: 'ИИ анализирует вашу стратегию и блокирует вилки',
+                expert: 'ИИ использует полный перебор вариантов'
+            };
+            strategyHintElement.innerHTML = `<strong>Стратегия ИИ:</strong> ${hints[gameConfig.difficulty]}`;
+        }
+        
+        // Смена стороны
+        function switchSides() {
+            if (!gameConfig.gameActive) {
+                [gameConfig.playerSymbol, gameConfig.computerSymbol] = 
+                    [gameConfig.computerSymbol, gameConfig.playerSymbol];
+                initGame();
+            }
+        }
+        
+        // Сброс счета
+        function resetScore() {
+            gameConfig.scores = { player: 0, computer: 0, draw: 0 };
+            updateScores();
+            initGame();
+        }
+        
+        // Изменение сложности
+        function setDifficulty(level) {
+            gameConfig.difficulty = level;
+            ai = new AdvancedAI(level);
+            
+            // Обновляем активную кнопку
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.level === level) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            updateUI();
+            
+            if (!gameConfig.gameActive) {
+                initGame();
+            }
+        }
+        
+        // Получение имени уровня сложности
+        function getDifficultyName(level) {
+            const names = {
+                easy: 'Легко',
+                medium: 'Нормально',
+                hard: 'Умный',
+                expert: 'Эксперт'
+            };
+            return names[level] || level;
+        }
+        
+        // Обработчики событий
+        document.getElementById('newGame').addEventListener('click', initGame);
+        document.getElementById('switchSides').addEventListener('click', switchSides);
+        document.getElementById('resetScore').addEventListener('click', resetScore);
+        
+        // Обработчики сложности
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', () => setDifficulty(btn.dataset.level));
+        });
+        
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            initGame();
+            
+            // Анимация появления
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 1s';
+            
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
